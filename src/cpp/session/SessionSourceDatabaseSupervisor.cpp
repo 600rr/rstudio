@@ -420,10 +420,15 @@ Error removeAndRecreate(const FilePath& dir)
 Error attachToSourceDatabase()
 {  
    // this session may already have a source database; if it does, re-acquire a
-   // lock and then use it
+   // lock and then use it. don't log warnings as this should only fail when
+   // e.g. the filesystem does not support the active locking scheme
    FilePath existingSdb = sessionDirPath();
    if (existingSdb.exists())
-      return sessionDirLock().acquire(sessionLockFilePath(existingSdb));
+   {
+      Error error = sessionDirLock().acquire(sessionLockFilePath(existingSdb));
+      if (!error)
+         return Success();
+   }
    
    // migrate from 'sdb' to current folder layout if needed
    bool needsSdbMigration =
